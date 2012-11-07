@@ -1,40 +1,60 @@
 #!/bin/sh
-URL="${1}"
 FILENAME=$(basename $0)
-if [ "x${URL}" = "x" ]; then
+
+show_help()
+{
 cat <<EOF
 
-  Time-stamp: <2012-11-07 18:15:18 vk>
-  Author: Karl Voit, tools@Karl-Voit.at
-  License: GPL v3
-  URL: http://github.com/novoid/gettvthek
+  - Time-stamp: <2012-11-07 19:07:10 vk>
+  - Author:     Karl Voit, tools@Karl-Voit.at
+  - License:    GPL v3
+  - URL:        http://github.com/novoid/gettvthek
 
-  This script takes an ORF-TVthek URL from command line and extracts a
-  wmv file using streaming. This script was working at time-stamp
-  above with Wheezy Debian GNU/Linux and mplayer version r34540. It
-  might break in case of changes of ORF-TVthek.
+  This script takes an URL from ORF-TVthek http://tvthek.orf.at/ and
+  extracts a wmv file using streaming. This script was working at
+  time-stamp above with Wheezy Debian GNU/Linux and mplayer version
+  r34540. It might break in case of changes of ORF-TVthek.
 
   Depends on: cat, sed, grep, wget, mplayer (>= r34540)
 
-  Enabling debug mode: please edit "$0" in function "debugthis()".
+  Usage:
 
-  Usage:    ${FILENAME} http://tvthek.orf.at/programs/1211-ZIB-2
+  :  ${FILENAME} http://tvthek.orf.at/programs/1211-ZIB-2
+                    ... normal invocation
+
+  :  ${FILENAME} -d http://tvthek.orf.at/programs/1211-ZIB-2
+                    ... activate debug mode
+
+  :  ${FILENAME} -h 
+                    ... show help
 
 EOF
 exit 0
-fi
+}
+
+## known issues:
+## - implement URL-checking of $URL and print out error if it is not an TVthek URL
+
+
+[ "x${1}" = "x" ] && show_help
+[ "x${1}" = "x-h" ] && show_help
+[ "x${1}" = "x--help" ] && show_help
 
 SED="/bin/sed"
 MPLAYER="/usr/bin/mplayer"
 WGET="/usr/bin/wget"
 GREP="/bin/grep"
+DEBUG="false"
+[ "x${1}" = "x-d" ] && DEBUG="true"
+[ "${DEBUG}" = false ] && URL="${1}"
+[ "${DEBUG}" = true ] && URL="${2}"
+[ "x${URL}" = "x" ] && show_help
 URLFILE=`echo ${URL} | ${SED} 's=.*/=='`
 LOGFILE="${FILENAME}.log"
 
 debugthis()
 {
-## please remove the comment character in the next line for enabling debug mode:
-#        echo $FILENAME: DEBUG: $@
+        [ "${DEBUG}" = true ] && echo $FILENAME: DEBUG: $@
         echo $FILENAME: DEBUG: $@ >> ${LOGFILE}
         echo "do nothing" >/dev/null
 }
@@ -59,17 +79,17 @@ errorexit()
 
     [ "$1" -lt 1 ] && echo "$FILENAME done."
     if [ "$1" -gt 0 ]; then
-        print_help
         echo
         echo "$FILENAME aborted with errorcode $1:  $2"
-        echo "see \"${LOGFILE}\" for further details."
+        echo
+        echo "See \"${LOGFILE}\" for further details."
         echo
     fi  
 
     exit $1
 } 
 
-[ -f ${LOGFILE} ] && 1 "A previous log file [${LOGFILE}] was found. Please check, if there is something important there and/or delete it."
+[ -f ${LOGFILE} ] && errorexit 1 "A previous log file [${LOGFILE}] was found.\nPlease check, if there is something important there and/or delete it."
 
 report "I am downloading the stream from \"${URL}\" ..."
 
@@ -111,14 +131,14 @@ debugthis "OUTPUTFILE [$OUTPUTFILE]"
 report "getting \"${OUTPUTFILE}\" which will take ${DURATION} ...  (some initial error msg might be OK)"
 debugthis "will execute: ${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}""
 ## e.g. vk@gary ~2d % mplayer -dumpstream mms://apasf.apa.at/cms-worldwide/2012-11-06_2230_sd_02_THAT-S-AMERICA_____4874721__o__0000309993__s4886459___73_ORF2HiRes_22325512P_23123810P.wmv -dumpfile 2012-11-06_2230_sd_02_THAT-S-AMERICA.wmv
-${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}"  || errorexit 4 "grabbing stream unsuccessful (${MMSURL})"
+${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 4 "grabbing stream unsuccessful (${MMSURL})"
 
 report "finished fetching ${OUTPUTFILE}"
 rm "${ASXFILE}"  || errorexit 10 "could not delete ASXFILE [${ASXFILE}]."
 rm "${URLFILE}"  || errorexit 11 "could not delete URLFILE [${URLFILE}]."
 debugthis "succesfully finished."
-
-## remove LOGFILE only if everything above did turn out great:
-rm "${LOGFILE}"
+sync; sleep 1
+## remove LOGFILE only if DEBUG is disabled and everything above did turn out great:
+[ "${DEBUG}" = false ] && rm "${LOGFILE}" || echo "could not delete LOGFILE [${LOGFILE}] or DEBUG mode was activated.."
 
 #end

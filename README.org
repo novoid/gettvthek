@@ -1,21 +1,24 @@
 
-- Author: Karl Voit, tools@Karl-Voit.at
-- License: GPL v3
-- URL: http://github.com/novoid/gettvthek
+  - Time-stamp: <2012-11-07 18:52:08 vk>
+  - Author:     Karl Voit, tools@Karl-Voit.at
+  - License:    GPL v3
+  - URL:        http://github.com/novoid/gettvthek
 
-This script takes an ORF-TVthek URL from command line and extracts a
-wmv file using streaming. This script was working at time-stamp above
-with Wheezy Debian GNU/Linux and mplayer version r34540. It might
-break in case of changes of ORF-TVthek.
+  This script takes an URL from ORF-TVthek http://tvthek.orf.at/ and
+  extracts a wmv file using streaming. This script was working at
+  time-stamp above with Wheezy Debian GNU/Linux and mplayer version
+  r34540. It might break in case of changes of ORF-TVthek.
 
-There are several other scripts on github which do the same
-job. This script is my version and has great error handling,
-cool debug messages, and a log file in case of a problem on the way.
+  Depends on: cat, sed, grep, wget, mplayer (>= r34540)
 
-Depends on: cat, sed, grep, wget, mplayer (>= r34540)
+  Usage:
 
-Enabling debug mode: please edit "./gettvthek.sh" in function "debugthis()".
+  :  gettvthek.sh http://tvthek.orf.at/programs/1211-ZIB-2
+                    ... normal invocation
 
-:  Usage:    gettvthek.sh http://tvthek.orf.at/programs/1211-ZIB-2
+  :  gettvthek.sh -d http://tvthek.orf.at/programs/1211-ZIB-2
+                    ... activate debug mode
 
-:  Help:     gettvthek.sh 
+  :  gettvthek.sh -h 
+                    ... show help
+
