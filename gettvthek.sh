@@ -4,14 +4,15 @@ FILENAME=$(basename $0)
 if [ "x${URL}" = "x" ]; then
 cat <<EOF
 
-  Time-stamp: <2012-11-07 17:54:45 vk>
+  Time-stamp: <2012-11-07 17:58:15 vk>
   Author: Karl Voit, tools@Karl-Voit.at
   License: GPL v3
   URL: http://github.com/novoid/gettvthek
 
-  This script takes an ORF-TVthek URL from command line and extracts a wmv file 
-  using streaming. This script was working at time-stamp above with GNU/Linux 
-  and mplayer version r34540. It might break in case of changes of ORF-TVthek.
+  This script takes an ORF-TVthek URL from command line and extracts a
+  wmv file using streaming. This script was working at time-stamp
+  above with Wheezy Debian GNU/Linux and mplayer version r34540. It
+  might break in case of changes of ORF-TVthek.
 
   Depends on: cat, sed, grep, wget, mplayer (>= r34540)
 
