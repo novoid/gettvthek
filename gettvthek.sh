@@ -33,7 +33,8 @@ exit 0
 }
 
 ## known issues:
-## - implement URL-checking of $URL and print out error if it is not an TVthek URL
+#i# - does not work with multi-episode streams like ZIB1
+#i# - implement URL-checking of $URL and print out error if it is not an TVthek URL
 
 
 [ "x${1}" = "x" ] && show_help
@@ -131,7 +132,7 @@ debugthis "OUTPUTFILE [$OUTPUTFILE]"
 report "getting \"${OUTPUTFILE}\" which will take ${DURATION} ...  (some initial error msg might be OK)"
 debugthis "will execute: ${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}""
 ## e.g. vk@gary ~2d % mplayer -dumpstream mms://apasf.apa.at/cms-worldwide/2012-11-06_2230_sd_02_THAT-S-AMERICA_____4874721__o__0000309993__s4886459___73_ORF2HiRes_22325512P_23123810P.wmv -dumpfile 2012-11-06_2230_sd_02_THAT-S-AMERICA.wmv
-${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 4 "grabbing stream unsuccessful (${MMSURL})"
+"${MPLAYER}" -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 4 "grabbing stream unsuccessful (${MMSURL})"
 
 report "finished fetching ${OUTPUTFILE}"
 rm "${ASXFILE}"  || errorexit 10 "could not delete ASXFILE [${ASXFILE}]."

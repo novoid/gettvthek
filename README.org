@@ -1,5 +1,5 @@
 
-  - Time-stamp: <2012-11-07 18:52:08 vk>
+  - Time-stamp: <2012-11-07 19:07:10 vk>
   - Author:     Karl Voit, tools@Karl-Voit.at
   - License:    GPL v3
   - URL:        http://github.com/novoid/gettvthek
@@ -22,3 +22,8 @@
   :  gettvthek.sh -h 
                     ... show help
 
+
+* Known Issues
+
+- does not work with multi-episode streams like ZIB1
+- implement URL-checking of $URL and print out error if it is not an TVthek URL
