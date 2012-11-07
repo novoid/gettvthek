@@ -4,7 +4,7 @@ FILENAME=$(basename $0)
 if [ "x${URL}" = "x" ]; then
 cat <<EOF
 
-  Time-stamp: <2012-11-07 17:58:15 vk>
+  Time-stamp: <2012-11-07 18:15:18 vk>
   Author: Karl Voit, tools@Karl-Voit.at
   License: GPL v3
   URL: http://github.com/novoid/gettvthek
@@ -24,7 +24,11 @@ EOF
 exit 0
 fi
 
-URLFILE=`echo ${URL} | sed 's=.*/=='`
+SED="/bin/sed"
+MPLAYER="/usr/bin/mplayer"
+WGET="/usr/bin/wget"
+GREP="/bin/grep"
+URLFILE=`echo ${URL} | ${SED} 's=.*/=='`
 LOGFILE="${FILENAME}.log"
 
 debugthis()
@@ -69,45 +73,45 @@ errorexit()
 
 report "I am downloading the stream from \"${URL}\" ..."
 
-debugthis "downloading page source [${URL}]: wget \"${URL}\""
+debugthis "downloading page source [${URL}]: ${WGET} \"${URL}\""
 ## e.g. "wget http://tvthek.orf.at/programs/1662-TVthek-special/episodes/4874721-That-s-America"
-wget -a ${LOGFILE} "${URL}" || errorexit 2 "wget command unsuccessful"
+${WGET} -a ${LOGFILE} "${URL}" || errorexit 2 "wget command unsuccessful"
 
 debugthis "check, if download was successful"
 [ -f "${URLFILE}" ] || no_file_found "wget-download of \"${URL}\" as \"${URLFILE}\""
 
 debugthis "get asx-URL after \"embed\""
 ## e.g. "/programs/1662-TVthek-special/episodes/4874721-That-s-America/4886459-20121106222015773.asx"
-ASXURL=`grep -A 5 embed "${URLFILE}" | grep src | sed 's/.*="//'|sed 's/"//'`
+ASXURL=`${GREP} -A 5 embed "${URLFILE}" | ${GREP} src | ${SED} 's/.*="//'|${SED} 's/"//'`
 
-debugthis "downloading asx-URL http://tvthek.orf.at[$ASXURL]: wget \"http://tvthek.orf.at${ASXURL}\""
+debugthis "downloading asx-URL http://tvthek.orf.at[$ASXURL]: ${WGET} \"http://tvthek.orf.at${ASXURL}\""
 ## e.g. wget http://tvthek.orf.at`grep -A 5 embed 4874721-That-s-America | grep src | sed 's/.*="//'|sed 's/"//'
-wget -a ${LOGFILE} "http://tvthek.orf.at${ASXURL}" || errorexit 4 "wget of ASX file (${ASXFILE}) was unsuccessful."
+${WGET} -a ${LOGFILE} "http://tvthek.orf.at${ASXURL}" || errorexit 4 "wget of ASX file (${ASXFILE}) was unsuccessful."
 
 debugthis "extracting ASXFILE from ASXURL"
-ASXFILE=`echo ${ASXURL} | sed 's=.*/=='`
+ASXFILE=`echo ${ASXURL} | ${SED} 's=.*/=='`
 
 debugthis "check, if ASXFILE could be found"
 [ -f "${ASXFILE}" ] || no_file_found "wget-download of \"${ASXURL}\" as \"${ASXFILE}\""
 
-debugthis "extract mms-stream from asx file [$ASXFILE]: cat \"${ASXFILE}\" | sed 's/.*mms:/mms:/' | sed 's/.wmv.*/.wmv/'"
+debugthis "extract mms-stream from asx file [$ASXFILE]: cat \"${ASXFILE}\" | ${SED} 's/.*mms:/mms:/' | ${SED} 's/.wmv.*/.wmv/'"
 ## e.g. "cat 4886459-20121106222015773.asx | sed 's/.*mms:/mms:/' | sed 's/.wmv.*/.wmv/'"
 ##       mms://apasf.apa.at/cms-worldwide/2012-11-06_2230_sd_02_THAT-S-AMERICA_____4874721__o__0000309993__s4886459___73_ORF2HiRes_22325512P_23123810P.wmv%
-MMSURL=`cat "${ASXFILE}" | sed 's/.*mms:/mms:/' | sed 's/.wmv.*/.wmv/'`
+MMSURL=`cat "${ASXFILE}" | ${SED} 's/.*mms:/mms:/' | ${SED} 's/.wmv.*/.wmv/'`
 debugthis "MMSURL [$MMSURL]"
 
 debugthis "extracting DURATION from ASXFILE"
-DURATION=`cat ${ASXFILE} | grep duration | sed 's/.*duration value="//' | sed 's/\..*//' | sed 's/:/h/' | sed 's/:/m/'`"s"
+DURATION=`cat ${ASXFILE} | ${GREP} duration | ${SED} 's/.*duration value="//' | ${SED} 's/\..*//' | ${SED} 's/:/h/' | ${SED} 's/:/m/'`"s"
 debugthis "DURATION [$DURATION]"
 
 debugthis "generating OUTPUTFILE from MMSURL"
-OUTPUTFILE=`echo ${MMSURL} | sed 's=.*/==' | sed 's/___.*//' | sed 's/.asx//'`_${DURATION}.wmv
+OUTPUTFILE=`echo ${MMSURL} | ${SED} 's=.*/==' | ${SED} 's/___.*//' | ${SED} 's/.asx//'`_${DURATION}.wmv
 debugthis "OUTPUTFILE [$OUTPUTFILE]"
 
 report "getting \"${OUTPUTFILE}\" which will take ${DURATION} ...  (some initial error msg might be OK)"
-debugthis "will execute: mplayer -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}""
+debugthis "will execute: ${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}""
 ## e.g. vk@gary ~2d % mplayer -dumpstream mms://apasf.apa.at/cms-worldwide/2012-11-06_2230_sd_02_THAT-S-AMERICA_____4874721__o__0000309993__s4886459___73_ORF2HiRes_22325512P_23123810P.wmv -dumpfile 2012-11-06_2230_sd_02_THAT-S-AMERICA.wmv
-mplayer -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}"  || errorexit 4 "grabbing stream unsuccessful (${MMSURL})"
+${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}"  || errorexit 4 "grabbing stream unsuccessful (${MMSURL})"
 
 report "finished fetching ${OUTPUTFILE}"
 rm "${ASXFILE}"  || errorexit 10 "could not delete ASXFILE [${ASXFILE}]."
