@@ -5,7 +5,7 @@ show_help()
 {
 cat <<EOF
 
-  - Time-stamp: <2012-11-07 19:07:10 vk>
+  - Time-stamp: <2013-11-13 19:16:08 vk>
   - Author:     Karl Voit, tools@Karl-Voit.at
   - License:    GPL v3
   - URL:        http://github.com/novoid/gettvthek
@@ -45,7 +45,9 @@ SED="/bin/sed"
 MPLAYER="/usr/bin/mplayer"
 WGET="/usr/bin/wget"
 GREP="/bin/grep"
+
 DEBUG="false"
+
 [ "x${1}" = "x-d" ] && DEBUG="true"
 [ "${DEBUG}" = false ] && URL="${1}"
 [ "${DEBUG}" = true ] && URL="${2}"
@@ -60,12 +62,44 @@ debugthis()
         echo "do nothing" >/dev/null
 }
 
+errorexit()
+{
+    debugthis "function myexit($1) called"
+
+    [ "$1" -lt 1 ] && echo "$FILENAME done."
+    if [ "$1" -gt 0 ]; then
+        echo
+	echo ".----------------------------------------------- ${FILENAME}"
+	echo "| aborted with errorcode $1:  $2"
+	echo "\`-----------------------------------------------"
+        echo
+        echo "See \"${LOGFILE}\" for further details."
+        echo
+	echo "${FILENAME}: aborted with errorcode $1:  $2" >> ${LOGFILE}
+    fi  
+
+    exit $1
+} 
+
+## check, if some files needed are not found
+testiffound()
+{
+    #doreport debug "function testiffound($1) called"
+
+  if [ ! -x "${2}" ]; then
+    errorexit 5 "The tool \"${1}\" could not be located: \n|   Missing tool? Please install it.\n|   Wrong link [${2}]? Correct it."
+  fi
+}
+
+
 report()
 {
-    echo "-----------------------------------------------"
-        echo "$FILENAME: $@"
-    echo "-----------------------------------------------"
-        echo $FILENAME: $@ >> ${LOGFILE}
+    echo " "
+    echo ".----------------------------------------------- ${FILENAME}"
+    echo "| $@"
+    echo "\`-----------------------------------------------"
+    echo " "
+    echo $FILENAME: $@ >> ${LOGFILE}
 }
 
 no_file_found()
@@ -74,23 +108,14 @@ no_file_found()
     exit 1
 }
 
-errorexit()
-{
-    debugthis "function myexit($1) called"
 
-    [ "$1" -lt 1 ] && echo "$FILENAME done."
-    if [ "$1" -gt 0 ]; then
-        echo
-        echo "$FILENAME aborted with errorcode $1:  $2"
-        echo
-        echo "See \"${LOGFILE}\" for further details."
-        echo
-    fi  
+[ -f ${LOGFILE} ] && errorexit 1 "A previous log file [${LOGFILE}] was found.\n| Please check, if there is something important there and/or delete it."
 
-    exit $1
-} 
-
-[ -f ${LOGFILE} ] && errorexit 1 "A previous log file [${LOGFILE}] was found.\nPlease check, if there is something important there and/or delete it."
+## check for missing tools:
+testiffound mplayer ${MPLAYER}
+testiffound sed ${SED}
+testiffound wget ${WGET}
+testiffound grep ${GREP}
 
 report "I am downloading the stream from \"${URL}\" ..."
 
@@ -129,7 +154,7 @@ debugthis "generating OUTPUTFILE from MMSURL"
 OUTPUTFILE=`echo ${MMSURL} | ${SED} 's=.*/==' | ${SED} 's/___.*//' | ${SED} 's/.asx//'`_${DURATION}.wmv
 debugthis "OUTPUTFILE [$OUTPUTFILE]"
 
-report "getting \"${OUTPUTFILE}\" which will take ${DURATION} ...  (some initial error msg might be OK)"
+report "getting \"${OUTPUTFILE}\" which will take ${DURATION} ...\n|  (some initial error messages might be OK)"
 debugthis "will execute: ${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}""
 ## e.g. vk@gary ~2d % mplayer -dumpstream mms://apasf.apa.at/cms-worldwide/2012-11-06_2230_sd_02_THAT-S-AMERICA_____4874721__o__0000309993__s4886459___73_ORF2HiRes_22325512P_23123810P.wmv -dumpfile 2012-11-06_2230_sd_02_THAT-S-AMERICA.wmv
 "${MPLAYER}" -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 4 "grabbing stream unsuccessful (${MMSURL})"
