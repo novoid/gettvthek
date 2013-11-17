@@ -5,7 +5,7 @@ show_help()
 {
 cat <<EOF
 
-  - Time-stamp: <2013-11-13 19:16:08 vk>
+  - Time-stamp: <2013-11-17 13:10:47 vk>
   - Author:     Karl Voit, tools@Karl-Voit.at
   - License:    GPL v3
   - URL:        http://github.com/novoid/gettvthek
@@ -13,7 +13,12 @@ cat <<EOF
   This script takes an URL from ORF-TVthek http://tvthek.orf.at/ and
   extracts a wmv file using streaming. This script was working at
   time-stamp above with Wheezy Debian GNU/Linux and mplayer version
-  r34540. It might break in case of changes of ORF-TVthek.
+  r34540. Also testes on Mac OS X 10.5.
+
+  Unfortunately, it does not work for programs that consists of 
+  multiple parts such as ZIB.
+
+  It might break in case of changes of ORF-TVthek.
 
   Depends on: cat, sed, grep, wget, mplayer (>= r34540)
 
@@ -41,10 +46,20 @@ exit 0
 [ "x${1}" = "x-h" ] && show_help
 [ "x${1}" = "x--help" ] && show_help
 
-SED="/bin/sed"
-MPLAYER="/usr/bin/mplayer"
-WGET="/usr/bin/wget"
-GREP="/bin/grep"
+if [ `uname` = "Linux" ]; then
+    SED="/bin/sed"
+    MPLAYER="/usr/bin/mplayer"
+    WGET="/usr/bin/wget"
+    GREP="/bin/grep"
+elif [ `uname` = "Darwin" ]; then
+    SED="/usr/bin/sed"
+    MPLAYER="/Applications/MPlayer OS X 2.app/Contents/Resources/mplayer.app/Contents/MacOS/mplayer"
+    WGET="/usr/local/bin/wget"
+    GREP="/usr/bin/grep"
+else
+    echo "Error: Operating System is not supported. Only Linux or OS X are supported by now."
+    exit 1
+fi
 
 DEBUG="false"
 
@@ -109,19 +124,19 @@ no_file_found()
 }
 
 
-[ -f ${LOGFILE} ] && errorexit 1 "A previous log file [${LOGFILE}] was found.\n| Please check, if there is something important there and/or delete it."
+[ -f ${LOGFILE} ] && errorexit 2 "A previous log file [${LOGFILE}] was found.\n| Please check, if there is something important there and/or delete it."
 
 ## check for missing tools:
-testiffound mplayer ${MPLAYER}
-testiffound sed ${SED}
-testiffound wget ${WGET}
-testiffound grep ${GREP}
+testiffound mplayer "${MPLAYER}"
+testiffound sed "${SED}"
+testiffound wget "${WGET}"
+testiffound grep "${GREP}"
 
 report "I am downloading the stream from \"${URL}\" ..."
 
 debugthis "downloading page source [${URL}]: ${WGET} \"${URL}\""
 ## e.g. "wget http://tvthek.orf.at/programs/1662-TVthek-special/episodes/4874721-That-s-America"
-${WGET} -a ${LOGFILE} "${URL}" || errorexit 2 "wget command unsuccessful"
+${WGET} -a ${LOGFILE} "${URL}" || errorexit 3 "wget command unsuccessful"
 
 debugthis "check, if download was successful"
 [ -f "${URLFILE}" ] || no_file_found "wget-download of \"${URL}\" as \"${URLFILE}\""
@@ -157,7 +172,8 @@ debugthis "OUTPUTFILE [$OUTPUTFILE]"
 report "getting \"${OUTPUTFILE}\" which will take ${DURATION} ...\n|  (some initial error messages might be OK)"
 debugthis "will execute: ${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}""
 ## e.g. vk@gary ~2d % mplayer -dumpstream mms://apasf.apa.at/cms-worldwide/2012-11-06_2230_sd_02_THAT-S-AMERICA_____4874721__o__0000309993__s4886459___73_ORF2HiRes_22325512P_23123810P.wmv -dumpfile 2012-11-06_2230_sd_02_THAT-S-AMERICA.wmv
-"${MPLAYER}" -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 4 "grabbing stream unsuccessful (${MMSURL})"
+##OLD: "${MPLAYER}" -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 6 "grabbing stream unsuccessful (${MMSURL})"
+"${MPLAYER}" -quiet -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 6 "grabbing stream unsuccessful (${MMSURL})"
 
 report "finished fetching ${OUTPUTFILE}"
 rm "${ASXFILE}"  || errorexit 10 "could not delete ASXFILE [${ASXFILE}]."
