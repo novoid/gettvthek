@@ -5,7 +5,7 @@ show_help()
 {
 cat <<EOF
 
-  - Time-stamp: <2013-11-17 13:10:47 vk>
+  - Time-stamp: <2013-11-30 12:50:31 vk>
   - Author:     Karl Voit, tools@Karl-Voit.at
   - License:    GPL v3
   - URL:        http://github.com/novoid/gettvthek
@@ -51,11 +51,13 @@ if [ `uname` = "Linux" ]; then
     MPLAYER="/usr/bin/mplayer"
     WGET="/usr/bin/wget"
     GREP="/bin/grep"
+    HEAD="/usr/bin/head"
 elif [ `uname` = "Darwin" ]; then
     SED="/usr/bin/sed"
     MPLAYER="/Applications/MPlayer OS X 2.app/Contents/Resources/mplayer.app/Contents/MacOS/mplayer"
     WGET="/usr/local/bin/wget"
     GREP="/usr/bin/grep"
+    HEAD="/usr/bin/head"
 else
     echo "Error: Operating System is not supported. Only Linux or OS X are supported by now."
     exit 1
@@ -139,48 +141,53 @@ debugthis "downloading page source [${URL}]: ${WGET} \"${URL}\""
 ${WGET} -a ${LOGFILE} "${URL}" || errorexit 3 "wget command unsuccessful"
 
 debugthis "check, if download was successful"
-[ -f "${URLFILE}" ] || no_file_found "wget-download of \"${URL}\" as \"${URLFILE}\""
+debugthis "URLFILE [${URLFILE}]"
+if [ ! -f "${URLFILE}" ]; then
+    URLFILE=`echo ${URLFILE} | ${SED} 's#-.*##'`
+    debugthis "could not locate URLFILE, trying with new URLFILE [${URLFILE}] ..."
+    [ -f "${URLFILE}" ] || no_file_found "wget-download of \"${URL}\" as \"${URLFILE}\""
+fi
 
-debugthis "get asx-URL after \"embed\""
-## e.g. "/programs/1662-TVthek-special/episodes/4874721-That-s-America/4886459-20121106222015773.asx"
-ASXURL=`${GREP} -A 5 embed "${URLFILE}" | ${GREP} src | ${SED} 's/.*="//'|${SED} 's/"//'`
+## FIXXME: if no URLFILE is found, remove everything from URLFILE behind "-" and use as new URLFILE
 
-debugthis "downloading asx-URL http://tvthek.orf.at[$ASXURL]: ${WGET} \"http://tvthek.orf.at${ASXURL}\""
-## e.g. wget http://tvthek.orf.at`grep -A 5 embed 4874721-That-s-America | grep src | sed 's/.*="//'|sed 's/"//'
-${WGET} -a ${LOGFILE} "http://tvthek.orf.at${ASXURL}" || errorexit 4 "wget of ASX file (${ASXFILE}) was unsuccessful."
 
-debugthis "extracting ASXFILE from ASXURL"
-ASXFILE=`echo ${ASXURL} | ${SED} 's=.*/=='`
+## 2013-11-30 works: 
+## grep -i wmv 1309553-Was-gibt-es-Neues- | grep "video_stream_url" | head -n 1 | sed 's#.*video_stream_url":"worldwide\\\/##' | sed 's#","video_file_name.*##'
+## ... results in ...
+## 2013-11-29_2200_sd_01_WAS-GIBT-ES-NEUES-_____7180997__o__0000938770__s7187676___s__ORF1HiRes_21593721P_22374601P.wmv
 
-debugthis "check, if ASXFILE could be found"
-[ -f "${ASXFILE}" ] || no_file_found "wget-download of \"${ASXURL}\" as \"${ASXFILE}\""
+debugthis "extracting WMVFILE from URLFILE [${URLFILE}] ..."
+WMVFILE=`${GREP} -i wmv ${URLFILE} | ${GREP} "video_stream_url" | ${HEAD} -n 1 | ${SED} 's#.*video_stream_url":"worldwide\\\/##' | ${SED} 's#","video_file_name.*##'` || errorexit 4 "could not extract WMVFILE name from URLFILE [${URLFILE}]."
 
-debugthis "extract mms-stream from asx file [$ASXFILE]: cat \"${ASXFILE}\" | ${SED} 's/.*mms:/mms:/' | ${SED} 's/.wmv.*/.wmv/'"
-## e.g. "cat 4886459-20121106222015773.asx | sed 's/.*mms:/mms:/' | sed 's/.wmv.*/.wmv/'"
-##       mms://apasf.apa.at/cms-worldwide/2012-11-06_2230_sd_02_THAT-S-AMERICA_____4874721__o__0000309993__s4886459___73_ORF2HiRes_22325512P_23123810P.wmv%
-MMSURL=`cat "${ASXFILE}" | ${SED} 's/.*mms:/mms:/' | ${SED} 's/.wmv.*/.wmv/'`
-debugthis "MMSURL [$MMSURL]"
+debugthis "WMVFILE [${WMVFILE}]"
 
 debugthis "extracting DURATION from ASXFILE"
-DURATION=`cat ${ASXFILE} | ${GREP} duration | ${SED} 's/.*duration value="//' | ${SED} 's/\..*//' | ${SED} 's/:/h/' | ${SED} 's/:/m/'`"s"
+DURATION=`cat ${URLFILE} | ${GREP} "duration_as_string" | ${HEAD} -n 1 | ${SED} 's/.*duration_as_string":"//' | ${SED} 's/",".*//'`
 debugthis "DURATION [$DURATION]"
 
-debugthis "generating OUTPUTFILE from MMSURL"
-OUTPUTFILE=`echo ${MMSURL} | ${SED} 's=.*/==' | ${SED} 's/___.*//' | ${SED} 's/.asx//'`_${DURATION}.wmv
+debugthis "generating OUTPUTFILE from STREAMURL"
+OUTPUTFILE="${WMVFILE}"
 debugthis "OUTPUTFILE [$OUTPUTFILE]"
 
-report "getting \"${OUTPUTFILE}\" which will take ${DURATION} ...\n|  (some initial error messages might be OK)"
-debugthis "will execute: ${MPLAYER} -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}""
-## e.g. vk@gary ~2d % mplayer -dumpstream mms://apasf.apa.at/cms-worldwide/2012-11-06_2230_sd_02_THAT-S-AMERICA_____4874721__o__0000309993__s4886459___73_ORF2HiRes_22325512P_23123810P.wmv -dumpfile 2012-11-06_2230_sd_02_THAT-S-AMERICA.wmv
-##OLD: "${MPLAYER}" -msglevel all=1 -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 6 "grabbing stream unsuccessful (${MMSURL})"
-"${MPLAYER}" -quiet -dumpstream "${MMSURL}" -dumpfile "${OUTPUTFILE}" || errorexit 6 "grabbing stream unsuccessful (${MMSURL})"
+debugthis "generating STREAMURL from WMVFILE [$WMVFILE] ..."
+STREAMURL="mms://apasf.apa.at/cms-worldwide/${WMVFILE}"
+debugthis "STREAMURL [$STREAMURL]"
+
+
+## 2013-11-30 works:
+## grep -i wmv 1309553-Was-gibt-es-Neues- | grep "video_stream_url" | head -n 1 | sed 's#.*video_stream_url":"worldwide\
+## mplayer -dumpstream mms://apasf.apa.at/cms-worldwide/2013-11-29_2200_sd_01_WAS-GIBT-ES-NEUES-_____7180997__o__0000938770__s7187676___s__ORF1HiRes_21593721P_22374601P.wmv -dumpfile "out.wmv"
+
+report "getting \"${OUTPUTFILE}\"\n|  ... which will take ${DURATION} ...\n|  (some initial error messages might be OK)"
+debugthis "will execute: ${MPLAYER} -quiet -dumpstream "${STREAMURL}" -dumpfile "${OUTPUTFILE}""
+"${MPLAYER}" -quiet -dumpstream "${STREAMURL}" -dumpfile "${OUTPUTFILE}" || errorexit 6 "grabbing stream unsuccessful (${STREAMURL})"
 
 report "finished fetching ${OUTPUTFILE}"
-rm "${ASXFILE}"  || errorexit 10 "could not delete ASXFILE [${ASXFILE}]."
-rm "${URLFILE}"  || errorexit 11 "could not delete URLFILE [${URLFILE}]."
+rm "${URLFILE}"  || errorexit 10 "could not delete URLFILE [${URLFILE}]."
 debugthis "succesfully finished."
 sync; sleep 1
 ## remove LOGFILE only if DEBUG is disabled and everything above did turn out great:
 [ "${DEBUG}" = false ] && rm "${LOGFILE}" || echo "could not delete LOGFILE [${LOGFILE}] or DEBUG mode was activated.."
+
 
 #end
