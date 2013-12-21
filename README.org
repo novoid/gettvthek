@@ -1,5 +1,5 @@
 
-  - Time-stamp: <2012-11-07 19:07:10 vk>
+  - Time-stamp: <2013-12-21 11:40:37 vk>
   - Author:     Karl Voit, tools@Karl-Voit.at
   - License:    GPL v3
   - URL:        http://github.com/novoid/gettvthek
@@ -13,10 +13,10 @@
 
   Usage:
 
-  :  gettvthek.sh http://tvthek.orf.at/programs/1211-ZIB-2
+  :  gettvthek.sh http://tvthek.orf.at/programs/1309553-Was-gibt-es-Neues-
                     ... normal invocation
 
-  :  gettvthek.sh -d http://tvthek.orf.at/programs/1211-ZIB-2
+  :  gettvthek.sh -d http://tvthek.orf.at/programs/1309553-Was-gibt-es-Neues-
                     ... activate debug mode
 
   :  gettvthek.sh -h 
@@ -27,3 +27,6 @@
 
 - does not work with multi-episode streams like ZIB1
 - implement URL-checking of $URL and print out error if it is not an TVthek URL
+- 2013-12-21: does not work any more with the latest changes of
+  TVThek :-(
+
