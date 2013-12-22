@@ -1,8 +1,15 @@
 
-  - Time-stamp: <2013-12-21 11:40:37 vk>
+  - Time-stamp: <2013-12-22 12:07:17 vk>
   - Author:     Karl Voit, tools@Karl-Voit.at
   - License:    GPL v3
   - URL:        http://github.com/novoid/gettvthek
+
+
+  *NOTE* 2013-12-22: with the latest changes of ORF TVThek, I was not
+  able to fix this script. So: *this script here does not work any
+  more!* I switched over to [[http://zdfmediathk.sourceforge.net/index.html][MediathekView]] which gets the job done and
+  is maintained much better than my script.
+
 
   This script takes an URL from ORF-TVthek http://tvthek.orf.at/ and
   extracts a wmv file using streaming. This script was working at
